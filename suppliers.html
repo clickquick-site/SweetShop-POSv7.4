@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>POS DZ - إدارة الموزعين</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+</head>
+<body>
+<div class="bg-animated"></div>
+<div class="page-wrapper">
+  <header class="app-header">
+    <button class="menu-btn" id="menuBtn" title="القائمة الرئيسية"><i class="fa-solid fa-bars"></i></button>
+    <span class="store-name" id="headerStoreName">اسم المتجر</span>
+    <!-- Bell injected by app.js via _injectBell() -->
+    <div class="app-brand">
+      <span class="brand-title">POS DZ</span>
+      <span class="brand-clock" id="clockDisplay"></span>
+    </div>
+  </header>
+  <div class="main-content">
+    <div class="section-header">
+      <a href="sale.html" class="back-btn">← رجوع</a>
+      <h2 class="page-title">🚚 إدارة الموزعين</h2>
+      <button class="btn btn-primary" onclick="openModal('addSupplierModal')">➕ إضافة مورد جديد</button>
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="supplierSearch" placeholder="ابحث عن مورد..." oninput="filterSuppliers()"/>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="data-table">
+        <thead><tr><th>الاسم</th><th>الهاتف</th><th>العنوان</th><th>نوع النشاط</th><th>إجراءات</th></tr></thead>
+        <tbody id="suppliersTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Supplier Modal -->
+<div class="modal-overlay" id="addSupplierModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="supplierModalTitle">➕ إضافة مورد جديد</span>
+      <button class="modal-close" onclick="closeModal('addSupplierModal')">✕</button>
+    </div>
+    <input type="hidden" id="editSupplierId"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="input-group">
+        <label class="input-label">👤 الاسم *</label>
+        <input class="input-field" type="text" id="supplierName" placeholder="اسم المورد"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">📞 الهاتف *</label>
+        <input class="input-field" type="tel" id="supplierPhone" placeholder="رقم الهاتف"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">📍 العنوان</label>
+        <input class="input-field" type="text" id="supplierAddress" placeholder="العنوان"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">🏭 نوع النشاط</label>
+        <input class="input-field" type="text" id="supplierActivity" placeholder="مثال: مواد غذائية، إلكترونيات..."/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-success" onclick="saveSupplier()">💾 حفظ المورد</button>
+      <button class="btn btn-secondary" onclick="clearSupplierForm()">🗑️ تفريغ</button>
+      <button class="btn btn-ghost" onclick="closeModal('addSupplierModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-top">
+        <div class="sidebar-brand-text">POS DZ</div>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="sidebar-user-box">
+        <div class="sidebar-user-avatar"><span id="sidebarUserInitial">A</span></div>
+        <div class="sidebar-user-info">
+          <span class="sidebar-user-name" id="sidebarUserName">المستخدم</span>
+          <span class="sidebar-user-role" id="sidebarUserRole">مدير</span>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="sale.html"><i class="fa-solid fa-cash-register nav-icon"></i><span>واجهة البيع</span></a>
+      <a class="nav-item" href="inventory.html" data-role="admin,manager"><i class="fa-solid fa-boxes-stacked nav-icon"></i><span>المخزون</span></a>
+      <a class="nav-item" href="customers.html"><i class="fa-solid fa-users nav-icon"></i><span>الزبائن</span></a>
+      <a class="nav-item" href="reports.html" data-role="admin,manager"><i class="fa-solid fa-chart-line nav-icon"></i><span>إدارة الأعمال</span></a>
+      <a class="nav-item" href="suppliers.html" class="nav-item active" data-role="admin,manager"><i class="fa-solid fa-truck nav-icon"></i><span>الموردون</span></a>
+      <a class="nav-item" href="users.html" data-role="admin"><i class="fa-solid fa-user-shield nav-icon"></i><span>المستخدمون</span></a>
+      <a class="nav-item" href="settings.html" data-role="admin,manager"><i class="fa-solid fa-gear nav-icon"></i><span>الإعدادات</span></a>
+      <div class="nav-divider"></div>
+      <div class="nav-item danger" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket nav-icon"></i><span>خروج</span></div>
+    </nav>
+    <div class="sidebar-footer"><span id="sidebarVersion">v6.0.0</span><span>POS DZ 2026</span></div>
+  </div>
+<div id="toast-container"></div>
+<script src="app.js"></script>
+<script src="sync.js"></script>
+<script>
+let allSuppliers = [];
+
+async function init() {
+  requireAuth();
+  requireRole(['admin', 'manager']);
+  await initApp();
+  loadSuppliers();
+}
+
+async function loadSuppliers() {
+  allSuppliers = await dbGetAll('suppliers');
+  renderSuppliers(allSuppliers);
+}
+
+function renderSuppliers(suppliers) {
+  const tbody = document.getElementById('suppliersTbody');
+  if (!suppliers.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon">🚚</div><p>لا يوجد موزعون</p></td></tr>';
+    return;
+  }
+  tbody.innerHTML = suppliers.map(s => `<tr>
+    <td><b>${s.name}</b></td>
+    <td>${s.phone}</td>
+    <td>${s.address || '—'}</td>
+    <td>${s.activity || '—'}</td>
+    <td class="actions">
+      <button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})">✏️</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+
+function filterSuppliers() {
+  const q = document.getElementById('supplierSearch').value.toLowerCase();
+  renderSuppliers(allSuppliers.filter(s =>
+    s.name.toLowerCase().includes(q) || s.phone.includes(q) || (s.activity||'').toLowerCase().includes(q)
+  ));
+}
+
+async function saveSupplier() {
+  const id = document.getElementById('editSupplierId').value;
+  const name = document.getElementById('supplierName').value.trim();
+  const phone = document.getElementById('supplierPhone').value.trim();
+  if (!name || !phone) { toast('الاسم والهاتف مطلوبان', 'warning'); return; }
+  const data = {
+    name, phone,
+    address: document.getElementById('supplierAddress').value.trim(),
+    activity: document.getElementById('supplierActivity').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+  if (id) { data.id = parseInt(id); await dbPut('suppliers', data); toast('تم التعديل ✅', 'success'); }
+  else { await dbAdd('suppliers', data); toast('تمت الإضافة ✅', 'success'); }
+  closeModal('addSupplierModal');
+  clearSupplierForm();
+  loadSuppliers();
+}
+
+async function editSupplier(id) {
+  const s = await dbGet('suppliers', id);
+  document.getElementById('editSupplierId').value = s.id;
+  document.getElementById('supplierName').value = s.name;
+  document.getElementById('supplierPhone').value = s.phone;
+  document.getElementById('supplierAddress').value = s.address || '';
+  document.getElementById('supplierActivity').value = s.activity || '';
+  document.getElementById('supplierModalTitle').textContent = '✏️ تعديل المورد';
+  openModal('addSupplierModal');
+}
+
+async function deleteSupplier(id) {
+  const _ok = await customConfirmAsync('حذف هذا المورد؟');
+  if (!_ok) return;
+  await dbDelete('suppliers', id);
+  toast('تم الحذف', 'success');
+  loadSuppliers();
+}
+
+function clearSupplierForm() {
+  ['editSupplierId','supplierName','supplierPhone','supplierAddress','supplierActivity'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('supplierModalTitle').textContent = '➕ إضافة مورد جديد';
+}
+
+function doLogout() { customConfirm('هل تريد تسجيل الخروج؟', () => { clearSession(); window.location.href = 'index.html'; }); }
+init();
+</script>
+</body>
+</html>

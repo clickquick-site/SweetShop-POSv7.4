@@ -62,9 +62,9 @@
     .action-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
     .action-btns .btn{font-size:1rem;font-weight:800;padding:13px 10px;border-radius:var(--radius);}
     /* VKB */
-    .vkb-toggle{position:fixed;bottom:80px;left:0;background:var(--primary);color:#fff;border:none;border-radius:0 8px 8px 0;padding:10px 8px;cursor:pointer;writing-mode:vertical-rl;font-size:0.78rem;font-family:'Cairo',sans-serif;font-weight:700;z-index:400;box-shadow:2px 0 12px rgba(0,0,0,0.3);transition:var(--transition);letter-spacing:1px;}
-    .vkb-toggle:hover{background:var(--primary-dark);padding-left:12px;}
-    .vkb-panel{position:fixed;bottom:20px;left:20px;z-index:450;display:none;background:var(--bg-dark);border:1px solid var(--primary);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,0.55);cursor:move;user-select:none;}
+    .vkb-toggle{position:fixed;top:50%;left:0;transform:translateY(-50%);background:var(--primary);color:transparent;border:none;border-radius:0 6px 6px 0;width:6px;height:70px;cursor:ew-resize;z-index:150;opacity:0.55;transition:width .25s,opacity .25s;padding:0;box-shadow:2px 0 6px rgba(0,0,0,.4);}
+    .vkb-toggle:hover{width:20px;opacity:1;}
+    .vkb-panel{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:150;display:none;background:#1a1a2e;border:1px solid var(--primary);border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.75);user-select:none;min-width:560px;max-width:96vw;}
     .vkb-panel.open{display:block;}
     .vkb-panel-header{background:var(--bg-medium);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-radius:var(--radius) var(--radius) 0 0;font-size:0.82rem;color:var(--text-secondary);}
     .vkb-panel-close{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem;}
@@ -213,7 +213,7 @@
 </div>
 
 <!-- VKB Toggle -->
-<button class="vkb-toggle" onclick="toggleVKB()">لوحة</button>
+<button class="vkb-toggle" onclick="toggleVKB()" title="لوحة المفاتيح الافتراضية"></button>
 <div class="vkb-panel" id="vkbPanel">
   <div class="vkb-panel-header" id="vkbPanelHeader">
     <span id="vkbTitle">لوحة المفاتيح</span>

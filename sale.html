@@ -1372,14 +1372,14 @@ async function confirmSale(doPrint=true){
   const now=new Date().toISOString();
   const saleId=await dbAdd('sales',{invoiceNumber,userId:user.id,customerId:customerId||0,total,discount,paid,change,isDebt:0,isCancelled:0,date:now});
   for(const item of cart){
-    await dbAdd('saleItems',{saleId,productId:item.productId,productName:item.size?item.name+' — '+item.size:item.name,quantity:item.quantity,unitPrice:item.unitPrice,total:item.total});
+    await dbAdd('saleItems',{saleId,productId:item.productId,productName:(item.size&&isNaN(item.size))?item.name+' — '+item.size:item.name,quantity:item.quantity,unitPrice:item.unitPrice,total:item.total});
     if(!item.isScale){const prod=await dbGet('products',item.productId);if(prod){prod.quantity=Math.max(0,prod.quantity-item.quantity);await dbPut('products',prod);}}
   }
   await SYNC.push('add','sales',{id:saleId,invoiceNumber,total,date:now});
   await dbAdd('logs',{action:'sale',details:`بيع ${invoiceNumber} — ${total.toFixed(2)} ${currency}`,date:now});
   if(doPrint){
     const sale={invoiceNumber,total,discount,paid,change,isDebt:0,date:now,customerName:customer?customer.name:'',customerPhone:customer?customer.phone:''};
-    const items=cart.map(i=>({productName:i.size?i.name+' — '+i.size:i.name,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total}));
+    const items=cart.map(i=>({productName:(i.size&&isNaN(i.size))?i.name+' — '+i.size:i.name,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total}));
     await printInvoice(sale,items);
     if(customer&&customer.email) await EMAIL.sendInvoice(customer,sale,items);
   }
@@ -1407,7 +1407,7 @@ async function partialPayment(){
   const now=new Date().toISOString();
   const saleId=await dbAdd('sales',{invoiceNumber,userId:user.id,customerId,total,discount,paid:paidAmt,isDebt:1,isCancelled:0,date:now});
   for(const item of cart){
-    await dbAdd('saleItems',{saleId,productId:item.productId,productName:item.size?item.name+' — '+item.size:item.name,quantity:item.quantity,unitPrice:item.unitPrice,total:item.total});
+    await dbAdd('saleItems',{saleId,productId:item.productId,productName:(item.size&&isNaN(item.size))?item.name+' — '+item.size:item.name,quantity:item.quantity,unitPrice:item.unitPrice,total:item.total});
     if(!item.isScale){const prod=await dbGet('products',item.productId);if(prod){prod.quantity=Math.max(0,prod.quantity-item.quantity);await dbPut('products',prod);}}
   }
   await dbAdd('debts',{customerId,saleId,amount:debtAmount,originalAmount:total,paidAtSale:paidAmt,isPaid:0,date:now});
@@ -1417,7 +1417,7 @@ async function partialPayment(){
   toast(`مدفوع ${paidAmt.toFixed(2)} ${currency} — دين ${debtAmount.toFixed(2)} ${currency} على ${customer?customer.name:'—'}`,'success',4000);
   if(await customConfirmAsync('هل تريد طباعة فاتورة الدين؟')){
     const sale={invoiceNumber,total,discount,paid:paidAmt,isDebt:1,date:now,customerName:customer?customer.name:'',customerPhone:customer?customer.phone:''};
-    const items=cart.map(i=>({productName:i.size?i.name+' — '+i.size:i.name,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total}));
+    const items=cart.map(i=>({productName:(i.size&&isNaN(i.size))?i.name+' — '+i.size:i.name,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total}));
     await printInvoice(sale,items);
   }
   clearCart();
@@ -1436,7 +1436,7 @@ async function registerDebt(){
   const now=new Date().toISOString();
   const saleId=await dbAdd('sales',{invoiceNumber,userId:user.id,customerId,total,discount,paid:0,isDebt:1,isCancelled:0,date:now});
   for(const item of cart){
-    await dbAdd('saleItems',{saleId,productId:item.productId,productName:item.size?item.name+' — '+item.size:item.name,quantity:item.quantity,unitPrice:item.unitPrice,total:item.total});
+    await dbAdd('saleItems',{saleId,productId:item.productId,productName:(item.size&&isNaN(item.size))?item.name+' — '+item.size:item.name,quantity:item.quantity,unitPrice:item.unitPrice,total:item.total});
     if(!item.isScale){const prod=await dbGet('products',item.productId);if(prod){prod.quantity=Math.max(0,prod.quantity-item.quantity);await dbPut('products',prod);}}
   }
   await dbAdd('debts',{customerId,saleId,amount:total,originalAmount:total,isPaid:0,date:now});
@@ -1445,7 +1445,7 @@ async function registerDebt(){
   toast(`دين ${total.toFixed(2)} ${currency} على ${customer?customer.name:'—'}`,'warning',3500);
   if(await customConfirmAsync('هل تريد طباعة فاتورة الدين؟')){
     const sale={invoiceNumber,total,discount,paid:0,isDebt:1,date:now,customerName:customer?customer.name:'',customerPhone:customer?customer.phone:''};
-    const items=cart.map(i=>({productName:i.size?i.name+' — '+i.size:i.name,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total}));
+    const items=cart.map(i=>({productName:(i.size&&isNaN(i.size))?i.name+' — '+i.size:i.name,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total}));
     await printInvoice(sale,items);
   }
   clearCart();
@@ -1591,7 +1591,7 @@ function initSearch(){
         stockBadge = `<span style="color:#e67e22;font-weight:800;font-size:0.76rem;">⚠️ ${available}</span>`;
       else
         stockBadge = `<span class="item-stock">📦 ${available}</span>`;
-      const displayName = p.size ? `${p.name} — ${p.size}` : p.name;
+      const displayName = (p.size && isNaN(p.size)) ? `${p.name} — ${p.size}` : p.name;
       const buyBadge = p.buyPrice ? `<span style="color:#60a5fa;font-size:0.74rem;font-weight:700;">سعر الشراء: ${parseFloat(p.buyPrice).toFixed(2)}</span>` : '';
       return `
       <div class="autocomplete-item" onclick="selectProduct(${p.id})" style="${qty<=0?'opacity:0.55;':''}">

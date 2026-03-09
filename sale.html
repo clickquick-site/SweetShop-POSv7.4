@@ -17,8 +17,8 @@
     .cart-area{flex:1;overflow-y:auto;overflow-x:auto;background:var(--bg-medium);border-radius:var(--radius);border:1px solid var(--border);position:relative;}
     .cart-area::before{content:'POS DZ';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Impact,sans-serif;font-size:clamp(3.5rem,15vw,8rem);font-weight:900;color:rgba(124,58,237,0.055);letter-spacing:8px;pointer-events:none;user-select:none;z-index:0;}
     .cart-area>*{position:relative;z-index:1;}
-    .cart-header-row{display:grid;grid-template-columns:minmax(110px,1.8fr) 70px 68px 58px 110px 74px 82px 38px;gap:4px;padding:7px 10px;background:var(--bg-dark);border-bottom:2px solid var(--primary);font-size:0.72rem;color:var(--text-secondary);font-weight:800;min-width:580px;position:sticky;top:0;z-index:2;}
-    .cart-item-row{display:grid;grid-template-columns:minmax(110px,1.8fr) 70px 68px 58px 110px 74px 82px 38px;gap:4px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;transition:background 0.14s;min-width:580px;}
+    .cart-header-row{display:grid;grid-template-columns:minmax(110px,1.8fr) 52px 58px 48px 110px 74px 82px 38px;gap:3px 2px;padding:7px 10px;background:var(--bg-dark);border-bottom:2px solid var(--primary);font-size:0.72rem;color:var(--text-secondary);font-weight:800;min-width:580px;position:sticky;top:0;z-index:2;}
+    .cart-item-row{display:grid;grid-template-columns:minmax(110px,1.8fr) 52px 58px 48px 110px 74px 82px 38px;gap:3px 2px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;transition:background 0.14s;min-width:580px;}
     .cart-item-row:hover{background:rgba(124,58,237,0.07);}
     .cart-item-row:nth-child(even){background:rgba(255,255,255,0.016);}
     .cart-cell{display:flex;flex-direction:column;align-items:center;gap:1px;}
@@ -269,51 +269,58 @@
 
   <div class="sale-body">
 
-    <!-- Search -->
-    <div class="search-wrap">
-      <div class="search-bar" style="display:flex;align-items:center;gap:0;">
-        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+    <!-- Search + Quick Qty -->
+    <div style="display:flex;align-items:stretch;gap:8px;">
 
-        <!-- ── الكمية السريعة — إطار واضح ── -->
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-                    margin:4px 6px;flex-shrink:0;gap:2px;"
-             title="الكمية السريعة — أدخل العدد ثم اختر المنتج أو امسح الباركود">
-          <span style="font-size:0.6rem;color:var(--text-secondary);font-weight:800;letter-spacing:0.03em;line-height:1;">الكمية</span>
-          <div style="display:flex;align-items:center;
-                      border:2px solid var(--primary);border-radius:8px;
-                      background:var(--bg-input);overflow:hidden;height:32px;">
-            <button type="button"
-              onclick="const q=document.getElementById('quickQty');q.value=Math.max(1,(parseInt(q.value)||1)-1);q.dispatchEvent(new Event('change'));"
-              style="background:transparent;border:none;border-left:1px solid var(--border);
-                     color:var(--text-secondary);width:22px;cursor:pointer;font-size:1rem;
-                     font-weight:900;height:100%;padding:0;transition:background 0.1s;"
-              onmouseenter="this.style.background='rgba(239,68,68,0.15)';this.style.color='#f87171'"
-              onmouseleave="this.style.background='transparent';this.style.color='var(--text-secondary)'">−</button>
-            <input type="number" id="quickQty"
-              value="1" min="1" max="999" step="1"
-              style="width:36px;border:none;background:transparent;
-                     color:var(--primary-light);font-size:1.05rem;font-weight:900;
-                     text-align:center;padding:0;outline:none;height:100%;"
-              onchange="this.value=Math.max(1,parseInt(this.value)||1)"
-              onclick="this.select()"/>
-            <button type="button"
-              onclick="const q=document.getElementById('quickQty');q.value=Math.min(999,(parseInt(q.value)||1)+1);q.dispatchEvent(new Event('change'));"
-              style="background:transparent;border:none;border-right:1px solid var(--border);
-                     color:var(--text-secondary);width:22px;cursor:pointer;font-size:1rem;
-                     font-weight:900;height:100%;padding:0;transition:background 0.1s;"
-              onmouseenter="this.style.background='rgba(16,185,129,0.15)';this.style.color='#34d399'"
-              onmouseleave="this.style.background='transparent';this.style.color='var(--text-secondary)'">+</button>
-          </div>
+      <!-- ── شريط البحث ── -->
+      <div class="search-wrap" style="flex:1;position:relative;">
+        <div class="search-bar">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="searchInput"
+            data-i18n-ph="saleSearchPH"
+            placeholder="ابحث عن منتج أو امسح الباركود..."
+            autocomplete="off"/>
+          <i class="fa-solid fa-barcode search-icon" style="cursor:pointer;" title="مسح الباركود"></i>
         </div>
-
-        <input type="text" id="searchInput"
-          data-i18n-ph="saleSearchPH"
-          placeholder="ابحث عن منتج أو امسح الباركود..."
-          autocomplete="off"
-          style="flex:1;border:none;background:transparent;"/>
-        <i class="fa-solid fa-barcode search-icon" style="cursor:pointer;" title="مسح الباركود"></i>
+        <div class="autocomplete-list" id="autocompleteList"></div>
       </div>
-      <div class="autocomplete-list" id="autocompleteList"></div>
+
+      <!-- ── الكمية السريعة — صندوق مستقل ── -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  flex-shrink:0;gap:3px;
+                  background:var(--bg-card);
+                  border:1px solid rgba(124,58,237,0.5);
+                  border-radius:var(--radius-sm);padding:4px 10px;"
+           title="الكمية السريعة — أدخل العدد ثم اختر المنتج أو امسح الباركود">
+        <span style="font-size:0.6rem;color:var(--text-secondary);font-weight:800;
+                     letter-spacing:0.04em;line-height:1;white-space:nowrap;">الكمية</span>
+        <div style="display:flex;align-items:center;
+                    border:1px solid rgba(124,58,237,0.45);border-radius:6px;
+                    background:var(--bg-input);overflow:hidden;height:28px;">
+          <button type="button"
+            onclick="const q=document.getElementById('quickQty');q.value=Math.max(1,(parseInt(q.value)||1)-1);q.dispatchEvent(new Event('change'));"
+            style="background:transparent;border:none;border-left:1px solid var(--border);
+                   color:#f87171;width:26px;cursor:pointer;font-size:1.05rem;
+                   font-weight:900;height:100%;padding:0;transition:background 0.1s;"
+            onmouseenter="this.style.background='rgba(239,68,68,0.18)'"
+            onmouseleave="this.style.background='transparent'">−</button>
+          <input type="number" id="quickQty"
+            value="1" min="1" max="999" step="1"
+            style="width:42px;border:none;background:transparent;
+                   color:var(--primary-light);font-size:1.05rem;font-weight:900;
+                   text-align:center;padding:0;outline:none;height:100%;"
+            onchange="this.value=Math.max(1,parseInt(this.value)||1)"
+            onclick="this.select()"/>
+          <button type="button"
+            onclick="const q=document.getElementById('quickQty');q.value=Math.min(999,(parseInt(q.value)||1)+1);q.dispatchEvent(new Event('change'));"
+            style="background:transparent;border:none;border-right:1px solid var(--border);
+                   color:#34d399;width:26px;cursor:pointer;font-size:1.05rem;
+                   font-weight:900;height:100%;padding:0;transition:background 0.1s;"
+            onmouseenter="this.style.background='rgba(16,185,129,0.18)'"
+            onmouseleave="this.style.background='transparent'">+</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- Scale bar (hidden by default) -->
@@ -344,7 +351,7 @@
       <div class="cart-header-row">
         <span>المنتج</span>
         <span style="text-align:center;">الحجم/الوحدة</span>
-        <span style="text-align:center;">ش. الشراء</span>
+        <span style="text-align:center;">سعر الشراء</span>
         <span style="text-align:center;">المخزون</span>
         <span style="text-align:center;" data-i18n="saleQty">الكمية</span>
         <span style="text-align:center;">السعر</span>

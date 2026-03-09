@@ -891,6 +891,28 @@ async function deleteAccountingExpense(id) {
   await loadAccounting();
 }
 
+async function sendDailyReportEmail() {
+  const date = document.getElementById('accDate')?.value || todayStr();
+  const [sales, saleItems, expenses, debts, products] = await Promise.all([
+    dbGetAll('sales'), dbGetAll('saleItems'), dbGetAll('expenses'),
+    dbGetAll('debts'), dbGetAll('products')
+  ]);
+  const daySales   = sales.filter(s => !s.isCancelled && s.date?.slice(0,10) === date);
+  const revenue    = daySales.reduce((s,x) => s + parseFloat(x.total||0), 0);
+  const salesCount = daySales.length;
+  const dayItemIds = new Set(daySales.map(s => s.id));
+  const dayItems   = saleItems.filter(i => dayItemIds.has(i.saleId));
+  const cost       = dayItems.reduce((s,i) => {
+    const p = products.find(x => x.id === i.productId);
+    return s + (parseFloat(p?.buyPrice||0) * parseFloat(i.quantity||1));
+  }, 0);
+  const expTotal = expenses.filter(e => e.date?.slice(0,10) === date)
+                           .reduce((s,e) => s + parseFloat(e.amount||0), 0);
+  const debtTotal = debts.filter(d => !d.isPaid).reduce((s,d) => s + parseFloat(d.amount||0), 0);
+  await EMAIL.sendDailyReport({ revenue, cost, expenses: expTotal, profit: revenue - cost - expTotal, debts: debtTotal, salesCount });
+  toast('📧 تم إرسال التقرير', 'success');
+}
+
 // ═══════════════════════════════════════════════
 // SIDEBAR QUICK VALUES
 // ═══════════════════════════════════════════════

@@ -321,6 +321,26 @@
             </div>
           </div>
 
+          <!-- 7. المصاريف العامة اليوم -->
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-top:3px solid #f59e0b;border-radius:var(--radius);padding:12px 14px;">
+            <div style="font-size:0.68rem;color:#f59e0b;font-weight:700;margin-bottom:5px;">💸 مصاريف عامة اليوم</div>
+            <div id="kpiGenExpenses" style="font-size:1.4rem;font-weight:900;color:#f59e0b;font-family:Impact,sans-serif;">—</div>
+            <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:5px;line-height:1.4;">
+              فواتير مسددة اليوم<br>
+              <span style="color:rgba(255,255,255,0.3);">(كهرباء، كراء، إنترنت...)</span>
+            </div>
+          </div>
+
+          <!-- 8. رواتب العمال اليوم -->
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-top:3px solid #10b981;border-radius:var(--radius);padding:12px 14px;">
+            <div style="font-size:0.68rem;color:#10b981;font-weight:700;margin-bottom:5px;">👷 رواتب العمال اليوم</div>
+            <div id="kpiWorkerSalaries" style="font-size:1.4rem;font-weight:900;color:#10b981;font-family:Impact,sans-serif;">—</div>
+            <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:5px;line-height:1.4;">
+              رواتب مسددة اليوم<br>
+              <span style="color:rgba(255,255,255,0.3);">(مسجّلة من إدارة العمال)</span>
+            </div>
+          </div>
+
         </div>
 
         <!-- شريط المعادلة التوضيحية -->
@@ -983,6 +1003,15 @@ async function updateSidebarValues() {
   const expTotal    = todayExp.reduce((s,e)=>s+e.amount,0);
   const yestExp     = allExpenses.filter(e => e.date && e.date.startsWith(yest)).reduce((s,e)=>s+e.amount,0);
 
+  // ── المصاريف العامة ورواتب العمال من سجل المداخيل (pos_dailyEntries) ──
+  let dailyGenExp   = 0;
+  let dailyWorkerSal= 0;
+  try {
+    const entries = JSON.parse(localStorage.getItem('pos_dailyEntries_' + today) || '[]');
+    dailyGenExp    = entries.filter(e => e.type === 'مصروف عام').reduce((s,e) => s + (e.amount||0), 0);
+    dailyWorkerSal = entries.filter(e => e.type === 'راتب').reduce((s,e) => s + (e.amount||0), 0);
+  } catch(e) { /* localStorage غير متاح */ }
+
   // ── منتجات ناقصة ──
   const lowStock = allProducts.filter(p => (p.quantity || 0) < 5 && (p.quantity || 0) >= 0);
 
@@ -1009,6 +1038,10 @@ async function updateSidebarValues() {
     kpiNet.textContent = fmt(netToday);
     kpiNet.style.color = netToday >= 0 ? 'var(--primary-light)' : 'var(--danger)';
   }
+
+  // ── خانتا المصاريف العامة ورواتب العمال ──
+  set('kpiGenExpenses',    dailyGenExp    > 0 ? fmt(dailyGenExp)    : '0.00 ' + currency);
+  set('kpiWorkerSalaries', dailyWorkerSal > 0 ? fmt(dailyWorkerSal) : '0.00 ' + currency);
 
   // ── Delta badges ──
   setDelta('kpiCashDelta',     cashIn,             yestCashIn);
@@ -1439,7 +1472,12 @@ async function loadDailyPanel() {
   const total = sales.filter(s=>!s.isDebt).reduce((s,x)=>s+x.total,0);
   document.getElementById('dailyTotalVal').textContent = total.toFixed(2) + ' ' + currency;
 
-  if (!sales.length) {
+  // ── قراءة سجل المصاريف والرواتب من pos_dailyEntries ──
+  let dailyEntries = [];
+  try { dailyEntries = JSON.parse(localStorage.getItem('pos_dailyEntries_' + date) || '[]'); } catch(e) { dailyEntries = []; }
+  const entriesTotal = dailyEntries.reduce((s,e) => s + (e.amount||0), 0);
+
+  if (!sales.length && !dailyEntries.length) {
     document.getElementById('dailyInvoicesWrap').innerHTML = '<div class="empty-state"><div class="empty-icon">💰</div><p>لا توجد مبيعات في هذا اليوم</p></div>';
     return;
   }
@@ -1470,15 +1508,42 @@ async function loadDailyPanel() {
     </tr>`;
   }));
 
+  // ── صفوف المصاريف والرواتب المسجّلة ──
+  const entryRows = dailyEntries.map(e => {
+    const icon   = e.type === 'راتب' ? '👷' : '💸';
+    const color  = e.type === 'راتب' ? '#10b981' : '#f59e0b';
+    const badge  = `<span style="font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:10px;background:rgba(239,68,68,0.12);color:#ef4444;">${e.type}</span>`;
+    const t = new Date(e.createdAt);
+    const p2 = n => ('0'+n).slice(-2);
+    const timeStr = p2(t.getHours())+':'+p2(t.getMinutes());
+    return `<tr style="background:rgba(239,68,68,0.04);">
+      <td style="color:var(--text-secondary);font-size:0.8rem;">${icon}</td>
+      <td style="font-size:0.78rem;color:var(--text-secondary);">${timeStr}</td>
+      <td style="font-size:0.85rem;color:var(--text-primary);">${e.label}</td>
+      <td style="font-weight:900;color:#ef4444;">- ${parseFloat(e.amount).toFixed(2)} ${currency}</td>
+      <td>${badge}</td>
+      <td></td>
+    </tr>`;
+  }).join('');
+
+  // ── صف الإجمالي إذا وجدت مصاريف ──
+  const entriesSummary = dailyEntries.length
+    ? `<tr style="background:rgba(239,68,68,0.08);border-top:2px solid rgba(239,68,68,0.2);">
+        <td colspan="3" style="font-weight:800;color:#ef4444;font-size:0.85rem;">📊 إجمالي الخصومات (مصاريف + رواتب)</td>
+        <td style="font-weight:900;color:#ef4444;">- ${entriesTotal.toFixed(2)} ${currency}</td>
+        <td colspan="2"></td>
+      </tr>`
+    : '';
+
   document.getElementById('dailyInvoicesWrap').innerHTML = `
     <div class="inv-table-wrap">
       <div class="inv-table-header">
-        <span class="text-muted" style="font-size:0.85rem;">${sales.length} فاتورة</span>
-        <span style="color:var(--success);font-weight:700;">نقداً: ${total.toFixed(2)} ${currency}</span>
+        <span class="text-muted" style="font-size:0.85rem;">${sales.length} فاتورة${dailyEntries.length ? ' + ' + dailyEntries.length + ' خصم' : ''}</span>
+        <span style="color:var(--success);font-weight:700;">نقداً: ${total.toFixed(2)} ${currency}${entriesTotal > 0 ? ' | خصومات: ' + entriesTotal.toFixed(2) + ' ' + currency : ''}</span>
       </div>
       <table class="data-table">
-        <thead><tr><th>الفاتورة</th><th>الوقت</th><th>الزبون</th><th>المبلغ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-        <tbody>${rows.join('')}</tbody>
+        <thead><tr><th>الفاتورة</th><th>الوقت</th><th>الزبون / التفصيل</th><th>المبلغ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody>${rows.join('')}${entryRows}${entriesSummary}</tbody>
       </table>
     </div>`;
 }
